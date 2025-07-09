@@ -1,0 +1,84 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "kafka_alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Kafka brokers JMX metrics
+  - job_name: 'kafka-broker-1'
+    static_configs:
+      - targets: ['kafka-broker-1:9101']
+    scrape_interval: 10s
+    metrics_path: /metrics
+
+  - job_name: 'kafka-broker-2'
+    static_configs:
+      - targets: ['kafka-broker-2:9102']
+    scrape_interval: 10s
+    metrics_path: /metrics
+
+  - job_name: 'kafka-broker-3'
+    static_configs:
+      - targets: ['kafka-broker-3:9103']
+    scrape_interval: 10s
+    metrics_path: /metrics
+
+  # Kafka Connect
+  - job_name: 'kafka-connect'
+    static_configs:
+      - targets: ['kafka-connect:8083']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Elasticsearch (отключен)
+  # - job_name: 'elasticsearch'
+  #   static_configs:
+  #     - targets: ['elasticsearch:9200']
+  #   scrape_interval: 15s
+  #   metrics_path: /_prometheus/metrics
+
+  # Spark Master
+  - job_name: 'spark-master'
+    static_configs:
+      - targets: ['spark-master:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics/master/prometheus
+
+  # Spark Worker
+  - job_name: 'spark-worker'
+    static_configs:
+      - targets: ['spark-worker:8081']
+    scrape_interval: 15s
+    metrics_path: /metrics/applications/prometheus
+
+  # Custom application metrics (если будут)
+  - job_name: 'shop-api'
+    static_configs:
+      - targets: ['localhost:8001']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  - job_name: 'client-api'
+    static_configs:
+      - targets: ['localhost:8002']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  - job_name: 'stream-processor'
+    static_configs:
+      - targets: ['localhost:8003']
+    scrape_interval: 15s
+    metrics_path: /metrics 

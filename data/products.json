@@ -1,0 +1,171 @@
+[
+  {
+    "product_id": "12345",
+    "name": "Умные часы XYZ",
+    "description": "Умные часы с функцией мониторинга здоровья, GPS и уведомлениями.",
+    "price": {
+      "amount": 4999.99,
+      "currency": "RUB"
+    },
+    "category": "Электроника",
+    "brand": "XYZ",
+    "stock": {
+      "available": 150,
+      "reserved": 20
+    },
+    "sku": "XYZ-12345",
+    "tags": ["умные часы", "гаджеты", "технологии"],
+    "images": [
+      {
+        "url": "https://example.com/images/product1.jpg",
+        "alt": "Умные часы XYZ - вид спереди"
+      },
+      {
+        "url": "https://example.com/images/product1_side.jpg",
+        "alt": "Умные часы XYZ - вид сбоку"
+      }
+    ],
+    "specifications": {
+      "weight": "50g",
+      "dimensions": "42mm x 36mm x 10mm",
+      "battery_life": "24 hours",
+      "water_resistance": "IP68"
+    },
+    "created_at": "2023-10-01T12:00:00Z",
+    "updated_at": "2023-10-10T15:30:00Z",
+    "index": "products",
+    "store_id": "store_001"
+  },
+  {
+    "product_id": "23456",
+    "name": "Беспроводные наушники Alpha",
+    "description": "Премиальные беспроводные наушники с активным шумоподавлением.",
+    "price": {
+      "amount": 8999.99,
+      "currency": "RUB"
+    },
+    "category": "Аудио",
+    "brand": "Alpha",
+    "stock": {
+      "available": 75,
+      "reserved": 10
+    },
+    "sku": "ALPHA-23456",
+    "tags": ["наушники", "аудио", "беспроводные", "шумоподавление"],
+    "images": [
+      {
+        "url": "https://example.com/images/headphones.jpg",
+        "alt": "Беспроводные наушники Alpha"
+      }
+    ],
+    "specifications": {
+      "weight": "250g",
+      "battery_life": "30 hours",
+      "bluetooth": "5.2",
+      "frequency_response": "20Hz - 20kHz"
+    },
+    "created_at": "2023-09-15T10:00:00Z",
+    "updated_at": "2023-10-05T14:00:00Z",
+    "index": "products",
+    "store_id": "store_002"
+  },
+  {
+    "product_id": "34567",
+    "name": "Игровая клавиатура Gamer Pro",
+    "description": "Механическая игровая клавиатура с RGB подсветкой и программируемыми клавишами.",
+    "price": {
+      "amount": 6499.99,
+      "currency": "RUB"
+    },
+    "category": "Компьютерная техника",
+    "brand": "GamerTech",
+    "stock": {
+      "available": 200,
+      "reserved": 35
+    },
+    "sku": "GAMER-34567",
+    "tags": ["клавиатура", "игровая", "механическая", "RGB"],
+    "images": [
+      {
+        "url": "https://example.com/images/keyboard.jpg",
+        "alt": "Игровая клавиатура Gamer Pro"
+      }
+    ],
+    "specifications": {
+      "switch_type": "Cherry MX Blue",
+      "backlight": "RGB",
+      "connectivity": "USB-C",
+      "keys": "104"
+    },
+    "created_at": "2023-08-20T16:30:00Z",
+    "updated_at": "2023-10-01T09:15:00Z",
+    "index": "products",
+    "store_id": "store_003"
+  },
+  {
+    "product_id": "45678",
+    "name": "Фитнес-браслет Health Track",
+    "description": "Фитнес-браслет с мониторингом пульса, сна и активности.",
+    "price": {
+      "amount": 2999.99,
+      "currency": "RUB"
+    },
+    "category": "Спорт и здоровье",
+    "brand": "HealthTech",
+    "stock": {
+      "available": 300,
+      "reserved": 45
+    },
+    "sku": "HEALTH-45678",
+    "tags": ["фитнес", "здоровье", "трекер", "пульс"],
+    "images": [
+      {
+        "url": "https://example.com/images/fitness-band.jpg",
+        "alt": "Фитнес-браслет Health Track"
+      }
+    ],
+    "specifications": {
+      "display": "0.96 inch OLED",
+      "battery_life": "7 days",
+      "water_resistance": "IP67",
+      "sensors": "Heart rate, accelerometer"
+    },
+    "created_at": "2023-07-10T11:45:00Z",
+    "updated_at": "2023-09-28T13:20:00Z",
+    "index": "products",
+    "store_id": "store_004"
+  },
+  {
+    "product_id": "56789",
+    "name": "Портативная колонка Sound Boom",
+    "description": "Компактная Bluetooth колонка с мощным звуком и защитой от воды.",
+    "price": {
+      "amount": 3499.99,
+      "currency": "RUB"
+    },
+    "category": "Аудио",
+    "brand": "SoundTech",
+    "stock": {
+      "available": 120,
+      "reserved": 15
+    },
+    "sku": "SOUND-56789",
+    "tags": ["колонка", "bluetooth", "портативная", "водонепроницаемая"],
+    "images": [
+      {
+        "url": "https://example.com/images/speaker.jpg",
+        "alt": "Портативная колонка Sound Boom"
+      }
+    ],
+    "specifications": {
+      "power": "20W",
+      "battery_life": "12 hours",
+      "bluetooth": "5.0",
+      "water_resistance": "IPX7"
+    },
+    "created_at": "2023-06-05T14:20:00Z",
+    "updated_at": "2023-09-25T16:40:00Z",
+    "index": "products",
+    "store_id": "store_005"
+  }
+]

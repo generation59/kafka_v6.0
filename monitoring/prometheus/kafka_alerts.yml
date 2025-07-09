@@ -1,0 +1,162 @@
+groups:
+  - name: kafka.rules
+    rules:
+      # Алерт при недоступности брокера Kafka
+      - alert: KafkaBrokerDown
+        expr: up{job=~"kafka-broker-.*"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: kafka
+        annotations:
+          summary: "Kafka broker {{ $labels.instance }} is down"
+          description: "Kafka broker {{ $labels.instance }} has been down for more than 30 seconds."
+
+      # Алерт при высокой нагрузке на диск
+      - alert: KafkaHighDiskUsage
+        expr: kafka_log_size_bytes / kafka_log_size_limit_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: kafka
+        annotations:
+          summary: "High disk usage on Kafka broker {{ $labels.instance }}"
+          description: "Disk usage on Kafka broker {{ $labels.instance }} is above 85%"
+
+      # Алерт при высокой задержке репликации
+      - alert: KafkaHighReplicationLag
+        expr: kafka_server_replica_manager_leader_count < kafka_server_replica_manager_partition_count
+        for: 2m
+        labels:
+          severity: warning
+          service: kafka
+        annotations:
+          summary: "High replication lag on Kafka broker {{ $labels.instance }}"
+          description: "Replication lag is high on Kafka broker {{ $labels.instance }}"
+
+      # Алерт при недоступности топика
+      - alert: KafkaTopicUnavailable
+        expr: kafka_server_replica_manager_offline_replica_count > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: kafka
+        annotations:
+          summary: "Kafka topic has offline replicas"
+          description: "Kafka broker {{ $labels.instance }} has {{ $value }} offline replicas"
+
+      # Алерт при высоком количестве ошибок продюсера
+      - alert: KafkaHighProducerErrors
+        expr: rate(kafka_server_broker_topic_metrics_failed_produce_requests_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: kafka
+        annotations:
+          summary: "High producer error rate on Kafka"
+          description: "Producer error rate is {{ $value }} errors/sec on {{ $labels.instance }}"
+
+      # Алерт при высоком количестве ошибок консьюмера
+      - alert: KafkaHighConsumerLag
+        expr: kafka_consumer_lag_max > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: kafka
+        annotations:
+          summary: "High consumer lag in Kafka"
+          description: "Consumer lag is {{ $value }} messages on {{ $labels.instance }}"
+
+      # Алерт при недоступности Zookeeper
+      - alert: ZookeeperDown
+        expr: up{job="zookeeper"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: zookeeper
+        annotations:
+          summary: "Zookeeper is down"
+          description: "Zookeeper has been down for more than 30 seconds"
+
+  - name: elasticsearch.rules
+    rules:
+      # Алерт при недоступности Elasticsearch
+      - alert: ElasticsearchDown
+        expr: up{job="elasticsearch"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: elasticsearch
+        annotations:
+          summary: "Elasticsearch is down"
+          description: "Elasticsearch has been down for more than 30 seconds"
+
+      # Алерт при высоком использовании heap памяти
+      - alert: ElasticsearchHighHeapUsage
+        expr: elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: elasticsearch
+        annotations:
+          summary: "High heap usage in Elasticsearch"
+          description: "Elasticsearch heap usage is above 90% on {{ $labels.instance }}"
+
+  - name: spark.rules
+    rules:
+      # Алерт при недоступности Spark Master
+      - alert: SparkMasterDown
+        expr: up{job="spark-master"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: spark
+        annotations:
+          summary: "Spark Master is down"
+          description: "Spark Master has been down for more than 1 minute"
+
+      # Алерт при недоступности Spark Worker
+      - alert: SparkWorkerDown
+        expr: up{job="spark-worker"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: spark
+        annotations:
+          summary: "Spark Worker is down"
+          description: "Spark Worker has been down for more than 1 minute"
+
+  - name: application.rules
+    rules:
+      # Алерт при недоступности Shop API
+      - alert: ShopAPIDown
+        expr: up{job="shop-api"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: shop-api
+        annotations:
+          summary: "Shop API is down"
+          description: "Shop API has been down for more than 1 minute"
+
+      # Алерт при недоступности Client API
+      - alert: ClientAPIDown
+        expr: up{job="client-api"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: client-api
+        annotations:
+          summary: "Client API is down"
+          description: "Client API has been down for more than 1 minute"
+
+      # Алерт при недоступности Stream Processor
+      - alert: StreamProcessorDown
+        expr: up{job="stream-processor"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: stream-processor
+        annotations:
+          summary: "Stream Processor is down"
+          description: "Stream Processor has been down for more than 1 minute" 
