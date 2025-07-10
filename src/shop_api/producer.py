@@ -7,6 +7,8 @@ import logging
 from datetime import datetime
 from typing import List, Dict, Any
 from pathlib import Path
+import os
+import sys
 
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
@@ -16,36 +18,60 @@ import click
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Добавляем корневую директорию в path для импорта конфигурации
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+try:
+    from config.kafka_ssl_config import SSL_CONFIG, KAFKA_BROKERS_SSL, KAFKA_BROKERS_PLAINTEXT
+    SSL_AVAILABLE = True
+except ImportError:
+    logger.warning("SSL конфигурация недоступна, используется только PLAINTEXT")
+    SSL_AVAILABLE = False
+
 
 class ShopAPIProducer:
     """Класс для отправки товаров магазинов в Kafka"""
     
     def __init__(self, bootstrap_servers: str = 'localhost:9092', 
-                 topic: str = 'shop-products'):
+                 topic: str = 'shop-products', use_ssl: bool = False):
         """
         Инициализация продюсера
         
         Args:
             bootstrap_servers: Адреса Kafka брокеров
             topic: Топик для отправки данных
+            use_ssl: Использовать SSL подключение
         """
         self.bootstrap_servers = bootstrap_servers
         self.topic = topic
+        self.use_ssl = use_ssl
         self.producer = None
         
     def connect(self):
         """Подключение к Kafka"""
         try:
-            self.producer = KafkaProducer(
-                bootstrap_servers=self.bootstrap_servers,
-                value_serializer=lambda v: json.dumps(v, ensure_ascii=False).encode('utf-8'),
-                key_serializer=lambda k: str(k).encode('utf-8'),
-                retries=3,
-                acks='all',  # Ждем подтверждения от всех реплик
-                request_timeout_ms=30000,
-                retry_backoff_ms=100
-            )
-            logger.info(f"Подключение к Kafka успешно: {self.bootstrap_servers}")
+            producer_config = {
+                'bootstrap_servers': self.bootstrap_servers,
+                'value_serializer': lambda v: json.dumps(v, ensure_ascii=False).encode('utf-8'),
+                'key_serializer': lambda k: str(k).encode('utf-8'),
+                'retries': 3,
+                'acks': 'all',  # Ждем подтверждения от всех реплик
+                'request_timeout_ms': 30000,
+                'retry_backoff_ms': 100
+            }
+            
+            # Добавляем SSL конфигурацию если требуется
+            if self.use_ssl:
+                if not SSL_AVAILABLE:
+                    logger.error("SSL конфигурация недоступна")
+                    return False
+                producer_config.update(SSL_CONFIG)
+                logger.info(f"Подключение к Kafka с SSL: {self.bootstrap_servers}")
+            else:
+                logger.info(f"Подключение к Kafka без SSL: {self.bootstrap_servers}")
+            
+            self.producer = KafkaProducer(**producer_config)
+            logger.info("Подключение к Kafka успешно")
             return True
         except Exception as e:
             logger.error(f"Ошибка подключения к Kafka: {e}")
@@ -161,10 +187,27 @@ class ShopAPIProducer:
               help='Задержка между отправками в секундах')
 @click.option('--continuous', '-c', is_flag=True,
               help='Непрерывная отправка (циклично)')
-def main(file: str, topic: str, brokers: str, delay: float, continuous: bool):
+@click.option('--ssl', is_flag=True,
+              help='Использовать SSL подключение')
+@click.option('--ssl-auto', is_flag=True,
+              help='Автоматически использовать SSL брокеры из конфигурации')
+def main(file: str, topic: str, brokers: str, delay: float, continuous: bool, 
+         ssl: bool, ssl_auto: bool):
     """Shop API Producer - отправка товаров в Kafka"""
     
-    producer = ShopAPIProducer(bootstrap_servers=brokers, topic=topic)
+    # Определяем конфигурацию подключения
+    use_ssl = ssl or ssl_auto
+    
+    if ssl_auto and SSL_AVAILABLE:
+        brokers = ','.join(KAFKA_BROKERS_SSL)
+        logger.info(f"Автоматический выбор SSL брокеров: {brokers}")
+    elif ssl_auto and not SSL_AVAILABLE:
+        logger.warning("SSL конфигурация недоступна, используем PLAINTEXT брокеры")
+        if SSL_AVAILABLE:
+            brokers = ','.join(KAFKA_BROKERS_PLAINTEXT)
+        use_ssl = False
+    
+    producer = ShopAPIProducer(bootstrap_servers=brokers, topic=topic, use_ssl=use_ssl)
     
     if not producer.connect():
         logger.error("Не удалось подключиться к Kafka")

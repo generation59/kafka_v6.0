@@ -1,374 +1,173 @@
-# Аналитическая платформа для маркетплейса
+# Kafka v6.0 - SSL система обработки данных
 
-Комплексная система для обработки данных маркетплейса в реальном времени с использованием Apache Kafka, Spark, файлового поиска и системы мониторинга.
+**Полнофункциональная система на базе Apache Kafka с SSL шифрованием, потоковой обработкой и мониторингом.**
 
-## 📋 Описание проекта
-
-Система состоит из следующих компонентов:
-
-### 🏪 SHOP API
-- Эмуляция магазинов, отправляющих товары в Kafka
-- Чтение данных из JSON файла
-- Отправка товаров в топик `shop-products`
-
-### 👥 CLIENT API  
-- Интерфейс для клиентов маркетплейса
-- Поиск товаров (файловый поиск)
-- Запрос персонализированных рекомендаций
-- Отправка событий в Kafka для аналитики
-
-### 🔍 Stream Processor
-- Потоковая фильтрация запрещённых товаров
-- Управление черным списком через CLI
-- Обработка данных в реальном времени
-
-### 📊 Analytics System
-- Apache Spark для аналитической обработки
-- Генерация персонализированных рекомендаций
-- Статистика по товарам и категориям
-
-### 💾 Storage
-- Файловый поиск товаров
-- Kafka Connect для записи в файлы
-- Файловое хранилище как fallback
-
-### 📈 Monitoring
-- Prometheus для сбора метрик
-- Grafana для визуализации
-- Alertmanager для уведомлений
-
-## 🏗️ Архитектура системы
+## 🏗️ Архитектура
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Shop API      │    │  Client API     │    │ Stream Filter   │
-│   (Producer)    │───▶│  (Consumer/     │    │ (Kafka Streams) │
-│                 │    │   Producer)     │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Apache Kafka Cluster                        │
-│  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐         │
-│  │ Broker 1:9092 │ │ Broker 2:9093 │ │ Broker 3:9094 │         │
-│  └───────────────┘ └───────────────┘ └───────────────┘         │
-└─────────────────────────────────────────────────────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ Spark Analytics │    │  Kafka Connect  │    │ File Search     │
-│ (Recommendations│    │  (File Sink)    │    │ (Search Index)  │
-│  & Statistics)  │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │   File Storage  │
-                       │ (products.json) │
-                       └─────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                     Monitoring Stack                            │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐              │
-│  │ Prometheus  │ │   Grafana   │ │Alertmanager │              │
-│  │   :9090     │ │    :3000    │ │    :9093    │              │
-│  └─────────────┘ └─────────────┘ └─────────────┘              │
-└─────────────────────────────────────────────────────────────────┘
+Products → [SSL Kafka] → Banned Filter → [Filtered Products] → File Storage
+           ↓                           ↓
+      Client API                  Analytics
+           ↓                           ↓
+    Recommendations         [Monitoring: Prometheus + Grafana]
 ```
+
+**Компоненты:**
+- **3 Kafka брокера** с SSL (порты 9093, 9096, 9099)
+- **Stream processor** - фильтрация запрещённых товаров
+- **File writer** - сохранение в JSONL
+- **Monitoring** - Prometheus + Grafana + Alertmanager
 
 ## 🚀 Быстрый старт
 
-### Системные требования
-
-- Docker с Docker Compose (v2)
-- Python 3.8+
-- 8GB RAM (рекомендуется 16GB)
-- 10GB свободного места на диске
-
-### 1. Клонирование проекта
-
+### 1. Подготовка
 ```bash
-git clone <repository-url>
+# Клонирование и setup
+git clone <repository>
 cd kafka_v6.0
-```
-
-### 2. Установка Python зависимостей
-
-```bash
+python -m venv kafka_env
+source kafka_env/bin/activate  # Linux/WSL
 pip install -r requirements.txt
+
+# Генерация SSL сертификатов
+./scripts/generate_ssl_certs.sh
+./scripts/fix_keystore_format.sh
+./scripts/fix_client_certificates.sh
 ```
 
-### 3. Запуск системы
-
-#### Linux/macOS:
+### 2. Запуск системы
 ```bash
-# Сделать скрипт исполняемым
-chmod +x scripts/start_system.sh
+# Запуск всех сервисов
+docker compose -f docker-compose-secure.yml up -d
 
-# Запуск всей системы
-./scripts/start_system.sh
+# Создание топиков
+./scripts/create_topics_secure.sh
+
+# Проверка SSL
+python scripts/test_ssl_connection.py
 ```
 
-#### Windows (PowerShell):
-```powershell
-# Запуск PowerShell скрипта
-.\scripts\start_system.ps1
-```
-
-#### Альтернативный способ (любая ОС):
-```bash
-# Ручной запуск через Docker Compose
-docker compose up -d
-```
-
-### 4. Проверка запуска
-
-После запуска будут доступны следующие веб-интерфейсы:
-
+### 3. Доступные интерфейсы
 - **Grafana**: http://localhost:3000 (admin/grafana)
 - **Prometheus**: http://localhost:9090
-- **Alertmanager**: http://localhost:9093  
-- **Spark Master**: http://localhost:8080
-- **Kafka Connect**: http://localhost:8083
+- **Alertmanager**: http://localhost:9394
 
-## 🛠️ Использование
+## 💼 Использование
 
-### Shop API - Отправка товаров
-
+### Отправка данных
 ```bash
-# Отправка товаров из файла (однократно)
-python -m src.shop_api.producer
-
-# Непрерывная отправка
-python -m src.shop_api.producer --continuous
-
-# С пользовательскими параметрами
-python -m src.shop_api.producer --file data/products.json --topic shop-products --delay 2.0
+# Отправка товаров с SSL
+python src/shop_api/producer.py --ssl-auto
 ```
 
-### Client API - Поиск и рекомендации
-
+### Фильтрация товаров
 ```bash
-# Поиск товаров
-python -m src.client_api.client search "умные часы"
-python -m src.client_api.client search "смартфон" --limit 5
+# Запуск фильтра (в отдельном терминале)
+python src/stream_processor/banned_filter.py start \
+  --brokers "localhost:9092,localhost:9095,localhost:9098"
 
-# Запрос рекомендаций
-python -m src.client_api.client recommendations --category "Электроника" --max-price 50000
-
-# Запрос с ожиданием результата
-python -m src.client_api.client recommendations --category "Электроника" --wait
-
-# Проверка статуса подключений
-python -m src.client_api.client status
+# Управление чёрным списком
+python src/stream_processor/banned_filter.py ban --product-id "12345" --reason "Тест"
+python src/stream_processor/banned_filter.py list
+python src/stream_processor/banned_filter.py unban --product-id "12345"
 ```
 
-### Stream Processor - Управление запрещёнными товарами
-
+### Сохранение результатов
 ```bash
-# Запуск фильтрации
-python -m src.stream_processor.banned_filter start
+# Запись отфильтрованных данных
+python src/file_writer/kafka_to_file.py write \
+  --topic filtered-products --output results.jsonl --max-messages 100
 
-# Добавление товара в чёрный список
-python -m src.stream_processor.banned_filter ban --product-id "12345" --reason "Нарушение правил"
-
-# Добавление по SKU
-python -m src.stream_processor.banned_filter ban --sku "FAKE-PRODUCT-123" --reason "Подделка"
-
-# Просмотр списка запрещённых товаров
-python -m src.stream_processor.banned_filter list
-
-# Удаление из чёрного списка
-python -m src.stream_processor.banned_filter unban --product-id "12345"
+# Проверка результатов
+cat data/output/results.jsonl | jq '.data | {product_id, name, filter_status}'
 ```
-
-### Analytics - Аналитическая обработка
-
-```bash
-# Запуск аналитической системы
-python -m src.analytics.spark_analytics start
-
-# Тестирование рекомендаций
-python -m src.analytics.spark_analytics test-recommendations user123 --category "Электроника" --max-price 30000
-```
-
-## 📊 Kafka Топики
-
-| Топик | Описание | Партиции | Репликация |
-|-------|----------|----------|------------|
-| `shop-products` | Товары от магазинов | 6 | 3 |
-| `filtered-products` | Отфильтрованные товары | 6 | 3 |
-| `filtered-events` | События фильтрации | 3 | 3 |
-| `client-searches` | Поисковые запросы | 3 | 3 |
-| `client-recommendations` | Запросы рекомендаций | 3 | 3 |
-| `recommendations-results` | Результаты рекомендаций | 3 | 3 |
-
-## 📈 Мониторинг и алерты
-
-### Prometheus метрики
-
-Система собирает метрики с:
-- Kafka брокеров (JMX)
-- Spark Master/Worker
-- Пользовательских приложений
-
-### Grafana дашборды
-
-- Kafka Cluster состояние
-- Producer/Consumer метрики
-- Spark задания
-- Системные ресурсы
-
-### Alertmanager уведомления
-
-Настроены алерты для:
-- Падение Kafka брокеров
-- Высокая задержка репликации
-- Ошибки в Spark заданиях
-- Высокое потребление ресурсов
 
 ## 🔧 Конфигурация
 
-### Kafka
+### SSL Kafka кластер
+| Брокер | PLAINTEXT | SSL | JMX |
+|--------|-----------|-----|-----|
+| broker-1 | 9092 | 9093 | 9101 |
+| broker-2 | 9095 | 9096 | 9102 |
+| broker-3 | 9098 | 9099 | 9103 |
 
-- **Репликация**: 3 брокера с `min.insync.replicas=2`
-- **Отказоустойчивость**: Автоматическое переключение лидеров
-- **Безопасность**: TLS отключен для упрощения (можно включить)
+### Топики
+| Топик | Партиции | Репликация |
+|-------|----------|------------|
+| shop-products | 3 | 3 |
+| filtered-products | 3 | 3 |
+| filtered-events | 3 | 3 |
 
-
-
-### Spark
-
-- **Master**: 1 мастер-узел
-- **Workers**: 1 воркер (можно масштабировать)
-- **Streaming**: Обработка батчами каждые 10-30 секунд
-
-## 🔍 Отладка
-
-### Просмотр логов
-
-```bash
-# Все сервисы
-docker compose logs -f
-
-# Конкретный сервис  
-docker compose logs -f kafka-broker-1
-
-# Python приложения
-python -m src.shop_api.producer 2>&1 | tee logs/shop_api.log
-```
-
-### Просмотр Kafka топиков
-
-```bash
-# Список топиков
-docker exec kafka-broker-1 kafka-topics.sh --bootstrap-server localhost:9092 --list
-
-# Содержимое топика
-docker exec kafka-broker-1 kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic shop-products --from-beginning
-
-# Статистика топика
-docker exec kafka-broker-1 kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic shop-products
-```
-
-### Проверка Kafka Connect
-
-```bash
-# Статус коннекторов
-curl http://localhost:8083/connectors
-
-# Детали коннектора
-curl http://localhost:8083/connectors/file-sink-products/status
-```
-
-## 🐛 Решение проблем
-
-### Kafka не запускается
-
-1. Проверьте доступность портов: `netstat -an | grep 9092`
-2. Увеличьте память для Docker
-3. Очистите volumes: `docker compose down -v`
-
-
-
-### Spark задания не запускаются
-
-1. Проверьте Spark Master UI: http://localhost:8080
-2. Убедитесь в доступности Kafka
-3. Проверьте пути к JAR файлам
-
-### Python приложения не подключаются
-
-1. Проверьте, что Kafka запущен: `nc -z localhost 9092`
-2. Убедитесь в правильности bootstrap серверов
-3. Проверьте топики: `docker exec kafka-broker-1 kafka-topics.sh --list --bootstrap-server localhost:9092`
-
-## 📝 Структура проекта
+## 📁 Структура проекта
 
 ```
 kafka_v6.0/
-├── src/
-│   ├── shop_api/           # Shop API (Producer)
-│   ├── client_api/         # Client API (Consumer/Producer)
-│   ├── stream_processor/   # Stream processing
-│   └── analytics/          # Spark analytics
-├── data/
-│   ├── products.json       # Тестовые данные товаров
+├── src/                      # Исходный код
+│   ├── shop_api/            # Producer
+│   ├── stream_processor/    # Фильтрация
+│   ├── file_writer/         # Запись в файлы
+│   └── client_api/          # Consumer
+├── data/                    # Данные и результаты
+│   ├── products.json        # Исходные товары
 │   ├── banned_products.json # Чёрный список
-│   └── output/            # Выходные файлы
-├── monitoring/
-│   ├── prometheus/        # Конфигурация Prometheus
-│   ├── grafana/          # Дашборды Grafana
-│   └── alertmanager/     # Конфигурация алертов
-├── scripts/
-│   ├── start_system.sh   # Запуск системы
-│   └── setup_kafka_topics.sh # Создание топиков
-├── config/
-│   └── file-sink-connector.json # Kafka Connect
-├── docker-compose.yml    # Docker Compose конфигурация
-├── requirements.txt      # Python зависимости
-└── README.md            # Документация
+│   └── output/             # Выходные файлы
+├── ssl/                     # SSL сертификаты
+├── monitoring/              # Prometheus + Grafana
+├── scripts/                 # Утилиты
+└── docker-compose-secure.yml
 ```
 
-## 🔒 Безопасность
+## 🚨 Troubleshooting
 
-В текущей версии для упрощения:
-- TLS отключен
-- Аутентификация отключена
-- ACL не настроены
+### SSL ошибки
+```bash
+# Проверка и перегенерация сертификатов
+python scripts/test_ssl_connection.py
+./scripts/generate_ssl_certs.sh
+./scripts/fix_keystore_format.sh
+```
 
-Для продакшена рекомендуется:
-- Включить TLS для Kafka
-- Настроить SASL аутентификацию
-- Настроить ACL для топиков
-- Использовать secrets для паролей
+### Kafka недоступен
+```bash
+# Проверка статуса
+docker ps
+docker logs kafka-broker-1
 
-## 🚀 Масштабирование
+# Перезапуск
+docker compose -f docker-compose-secure.yml down
+docker compose -f docker-compose-secure.yml up -d
+```
 
-### Горизонтальное масштабирование
+### Проблемы с топиками
+```bash
+# Проверка топиков
+docker exec kafka-broker-1 kafka-topics --bootstrap-server localhost:19092 --list
 
-1. **Kafka**: Добавление брокеров в docker-compose.yml
-2. **Spark**: Увеличение количества workers
-3. **Приложения**: Запуск нескольких инстансов
+# Создание вручную
+docker exec kafka-broker-1 kafka-topics --bootstrap-server localhost:19092 \
+  --create --topic shop-products --partitions 3 --replication-factor 3
+```
 
-### Вертикальное масштабирование
+## 🎯 Полный цикл работы
 
-1. Увеличение памяти для JVM
-2. Больше CPU cores для Spark
-3. SSD диски для Kafka/Elasticsearch
+```bash
+# 1. Запуск системы
+docker compose -f docker-compose-secure.yml up -d
 
-## 📊 Производительность
+# 2. Запуск фильтра (терминал 1)
+python src/stream_processor/banned_filter.py start --brokers "localhost:9092,localhost:9095,localhost:9098"
 
-### Рекомендуемые настройки
+# 3. Отправка данных (терминал 2)  
+python src/shop_api/producer.py --ssl-auto
 
-| Компонент | CPU | RAM | Диск |
-|-----------|-----|-----|------|
-| Kafka (3 брокера) | 6 cores | 12GB | 100GB SSD |
-| Spark | 4 cores | 8GB | 50GB |
-| Monitoring | 2 cores | 4GB | 20GB |
+# 4. Запись результатов (терминал 3)
+python src/file_writer/kafka_to_file.py write --topic filtered-products --output results.jsonl
 
-### Бенчмарки
+# 5. Проверка в Grafana
+open http://localhost:3000
+```
 
-- **Throughput**: ~10,000 сообщений/сек на товары
-- **Latency**: <100ms для поиска
-- **Storage**: ~1GB на 100,000 товаров
+---
+
+**Система готова к работе!** 🚀 SSL кластер + фильтрация + мониторинг + файловое хранение.
+
